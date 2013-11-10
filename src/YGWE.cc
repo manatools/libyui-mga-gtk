@@ -1,4 +1,6 @@
 /*
+  Copyright 2013 by Angelo Naselli <anaselli at linux dot it>
+ 
   This library is free software; you can redistribute it and/or modify
   it under the terms of the GNU Lesser General Public License as
   published by the Free Software Foundation; either version 2.1 of the
@@ -25,7 +27,7 @@
 #include "YMGAGWidgetFactory.h"
 #include <YUIException.h>
 
-YGWE::YGWE() : YWE()
+YGWE::YGWE() : YExternalWidgets()
 {
 }
 
@@ -33,7 +35,7 @@ YGWE::~YGWE()
 {
 }
 
-YWidgetExtensionFactory* YGWE::createWidgetExtensionFactory()
+YExternalWidgetsFactory* YGWE::createExternalWidgetsFactory()
 {
   YMGAGWidgetFactory * factory = new YMGAGWidgetFactory();
   YUI_CHECK_NEW( factory );
@@ -41,13 +43,13 @@ YWidgetExtensionFactory* YGWE::createWidgetExtensionFactory()
   return factory;
 }
 
-YWE * createWE(  )
+YExternalWidgets * createWE(  )
 {
-    if ( ! YWE::we() )
+    if ( ! YExternalWidgets::externalWidgets() )
     {
         YGWE * ue = new YGWE( );
         YUI_CHECK_NEW ( ue );
     }
 
-    return YWE::we();
+    return YExternalWidgets::externalWidgets();
 }

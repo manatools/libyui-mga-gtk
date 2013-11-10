@@ -1,4 +1,6 @@
 /*
+  Copyright 2013 by Angelo Naselli <anaselli at linux dot it>
+ 
   This library is free software; you can redistribute it and/or modify
   it under the terms of the GNU Lesser General Public License as
   published by the Free Software Foundation; either version 2.1 of the
@@ -23,9 +25,9 @@
 
 #ifndef YGWE_h
 #define YGWE_h
-#include <YWE.h>
+#include <YExternalWidgets.h>
 
-class YGWE : public YWE
+class YGWE : public YExternalWidgets
 {
 public:
   YGWE();
@@ -33,7 +35,7 @@ public:
 
 protected:
 
-  virtual YWidgetExtensionFactory * createWidgetExtensionFactory();
+  virtual YExternalWidgetsFactory * createExternalWidgetsFactory();
 };
 
 #endif //YGWE_h
