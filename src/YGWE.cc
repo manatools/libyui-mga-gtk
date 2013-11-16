@@ -35,7 +35,7 @@ YGWE::~YGWE()
 {
 }
 
-YExternalWidgetsFactory* YGWE::createExternalWidgetsFactory()
+YExternalWidgetFactory* YGWE::createExternalWidgetFactory()
 {
   YMGAGWidgetFactory * factory = new YMGAGWidgetFactory();
   YUI_CHECK_NEW( factory );
