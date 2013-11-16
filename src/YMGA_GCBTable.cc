@@ -492,7 +492,7 @@ bool YMGA_GCBTable::_immediateMode() {
 
 void YMGA_GCBTable::setKeepSorting (bool keepSorting)
 {
-    YTable::setKeepSorting (keepSorting);
+    YMGA_CBTable::setKeepSorting (keepSorting);
     setSortable (!keepSorting);
     if (!keepSorting) {
         GtkTreeViewColumn *column = gtk_tree_view_get_column (getView(), 0);
@@ -579,7 +579,7 @@ void YMGA_GCBTable::hack_right_click_cb (YGtkTreeView* view, gboolean outreach, 
             YWidget *button = YGDialog::currentDialog()->getFunctionWidget (key);
             if (button) {
                 GtkWidget *item;
-                item = gtk_image_menu_item_new_from_stock (stock, NULL);
+                item = gtk_menu_item_new_with_mnemonic (stock);
                 gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
                 g_signal_connect (G_OBJECT (item), "activate",
                                   G_CALLBACK (key_activate_cb), button);
@@ -591,16 +591,19 @@ void YMGA_GCBTable::hack_right_click_cb (YGtkTreeView* view, gboolean outreach, 
     YGDialog *dialog = YGDialog::currentDialog();
     if (dialog->getClassWidgets ("YTable").size() == 1) {
         // if more than one table exists, function keys would be ambiguous
-        if (outreach) {
-            if (dialog->getFunctionWidget(3))
-                inner::appendItem (menu, GTK_STOCK_ADD, 3);
-        }
-        else {
-            if (dialog->getFunctionWidget(4))
-                inner::appendItem (menu, GTK_STOCK_EDIT, 4);
-            if (dialog->getFunctionWidget(5))
-                inner::appendItem (menu, GTK_STOCK_DELETE, 5);
-        }
+        if (dialog->getClassWidgets ("YTable").size() == 1) {
+                        // if more than one table exists, function keys would be ambiguous
+                        if (outreach) {
+                                if (dialog->getFunctionWidget(3))
+                                        inner::appendItem (menu, "list-add", 3);
+                        }
+                        else {
+                                if (dialog->getFunctionWidget(4))
+                                        inner::appendItem (menu, "edit-cut", 4);
+                                if (dialog->getFunctionWidget(5))
+                                        inner::appendItem (menu, "list-remove", 5);
+                        }
+                }
     }
 
     menu = ygtk_tree_view_append_show_columns_item (YGTK_TREE_VIEW (view), menu);
