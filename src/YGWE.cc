@@ -43,7 +43,7 @@ YExternalWidgetFactory* YGWE::createExternalWidgetFactory()
   return factory;
 }
 
-YExternalWidgets * createWE(  )
+YExternalWidgets * createExternalWidgets()
 {
     if ( ! YExternalWidgets::externalWidgets() )
     {

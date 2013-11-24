@@ -266,6 +266,8 @@ void YMGA_GTreeView::toggleMark (GtkTreePath *path, gint column)
                     (pTable->selectionMode() == YTableMode::YTableCheckBoxOnLastColumn  &&  column == pTable->columns()*3 ))
             {
                 setRowMark (&iter, column, state);
+                yitem->setSelected (state);
+                pTable->setChangedItem(pYTableItem);
                 emitEvent (YEvent::ValueChanged);
             }
 
@@ -437,8 +439,10 @@ YMGA_GCBTable::YMGA_GCBTable (YWidget *parent, YTableHeader *headers, YTableMode
     if (!keepSorting())
         setSortable (true);
 
+    yuiMilestone() << " columns " << columns() << " tot " << columnNumber <<  std::endl;
+
     // if last col is aligned: add some dummy so that it doesn't expand.
-    YAlignmentType lastAlign = alignment (columns()-1);
+    YAlignmentType lastAlign = alignment (columnNumber-1);
     if (lastAlign == YAlignCenter || lastAlign == YAlignEnd)
         gtk_tree_view_append_column (getView(), gtk_tree_view_column_new());
 
