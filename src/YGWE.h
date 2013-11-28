@@ -30,7 +30,7 @@
 class YGWE : public YExternalWidgets
 {
 public:
-  YGWE();
+  YGWE( const std::string& name );
   virtual ~YGWE();
 
 protected:
