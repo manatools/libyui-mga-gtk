@@ -199,6 +199,9 @@ void YMGA_GTreeView::focusItem (YItem *item, bool select)
     }
     else
         gtk_tree_selection_unselect_iter (getSelection(), &iter);
+    
+    
+    setRowMark (&iter, markColumn, select);
 }
 
 void YMGA_GTreeView::unfocusAllItems()
