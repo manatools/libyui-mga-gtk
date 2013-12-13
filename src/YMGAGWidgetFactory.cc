@@ -53,7 +53,7 @@ YMGAGWidgetFactory::~YMGAGWidgetFactory()
 
 
 YMGA_CBTable *
-YMGAGWidgetFactory::createCBTable( YWidget * parent, YTableHeader * header, YTableMode mode )
+YMGAGWidgetFactory::createCBTable( YWidget * parent, YTableHeader * header, YCBTableMode mode )
 {
     YMGA_GCBTable * table = new YMGA_GCBTable( parent, header, mode );
     YUI_CHECK_NEW( table );

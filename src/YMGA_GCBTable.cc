@@ -116,10 +116,18 @@ void YMGA_GTreeView::addTextColumn (const std::string &header, YAlignmentType al
 
 void YMGA_GTreeView::addCheckColumn (int check_col)
 {
+  addCheckColumn ("",  check_col);
+}
+
+void YMGA_GTreeView::addCheckColumn (const std::string &header, int check_col)
+{
     GtkCellRenderer *renderer = gtk_cell_renderer_toggle_new();
     g_object_set_data (G_OBJECT (renderer), "column", GINT_TO_POINTER (check_col));
     GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
                                     NULL, renderer, "active", check_col, NULL);
+    
+    gtk_tree_view_column_set_title (column, header.c_str());
+    
     gtk_tree_view_column_set_cell_data_func (column, renderer, inconsistent_mark_cb, this, NULL);
     g_signal_connect (G_OBJECT (renderer), "toggled",
                       G_CALLBACK (toggled_cb), this);
@@ -199,9 +207,6 @@ void YMGA_GTreeView::focusItem (YItem *item, bool select)
     }
     else
         gtk_tree_selection_unselect_iter (getSelection(), &iter);
-    
-    
-    setRowMark (&iter, markColumn, select);
 }
 
 void YMGA_GTreeView::unfocusAllItems()
@@ -258,22 +263,21 @@ void YMGA_GTreeView::toggleMark (GtkTreePath *path, gint column)
     state = !state;
 
     YItem *yitem = getYItem (&iter);
-    YTableItem *pYTableItem = dynamic_cast<YTableItem*>(yitem);
-    if (pYTableItem)
+    YCBTableItem *pYCBTableItem = dynamic_cast<YCBTableItem*>(yitem);
+    if (pYCBTableItem)
     {
         YMGA_CBTable * pTable = dynamic_cast<YMGA_CBTable*>(this);
         if (pTable)
         {
-            if ( (pTable->selectionMode() == YTableMode::YTableCheckBoxOnFirstColumn &&  column == 0)
+            if ( (pTable->tableMode() == YCBTableMode::YCBTableCheckBoxOnFirstColumn &&  column == 0)
                     ||
-                    (pTable->selectionMode() == YTableMode::YTableCheckBoxOnLastColumn  &&  column == pTable->columns()*3 ))
+                    (pTable->tableMode() == YCBTableMode::YCBTableCheckBoxOnLastColumn  &&  column == (pTable->columns()-1)*3 ))
             {
                 setRowMark (&iter, column, state);
-                yitem->setSelected (state);
-                pTable->setChangedItem(pYTableItem);
+                pYCBTableItem->check(state);
+                pTable->setChangedItem(pYCBTableItem);
                 emitEvent (YEvent::ValueChanged);
             }
-
         }
     }
     else
@@ -349,8 +353,7 @@ void YMGA_GTreeView::selection_changed_cb (GtkTreeSelection *selection, YMGA_GTr
     };
 
     if (pThis->m_blockTimeout) return;
-    if (pThis->markColumn == -1)
-        gtk_tree_model_foreach (pThis->getModel(), inner::foreach_sync_select, pThis);
+    gtk_tree_model_foreach (pThis->getModel(), inner::foreach_sync_select, pThis);
     if (pThis->_immediateMode())
         pThis->emitEvent (YEvent::SelectionChanged, IF_NOT_PENDING_EVENT);
 }
@@ -358,29 +361,25 @@ void YMGA_GTreeView::selection_changed_cb (GtkTreeSelection *selection, YMGA_GTr
 void YMGA_GTreeView::activated_cb (GtkTreeView *tree_view, GtkTreePath *path,
                                    GtkTreeViewColumn *column, YMGA_GTreeView* pThis)
 {
-    if (pThis->markColumn >= 0)
+    YMGA_CBTable *pTable = dynamic_cast<YMGA_CBTable*>(pThis);
+    if (pTable)
     {
-        YTable *pTable = dynamic_cast<YTable*>(pThis);
-        if (pTable)
-        {
-            GtkTreeViewColumn* col = gtk_tree_view_get_column (pThis->getView(), pThis->markColumn);
-            if (col == column)
-                pThis->toggleMark (path, pThis->markColumn);
-            else
-                pThis->emitEvent (YEvent::Activated);
-        }
-        else
+        GtkTreeViewColumn* col = gtk_tree_view_get_column (pThis->getView(), pThis->markColumn);
+        if (col == column)
             pThis->toggleMark (path, pThis->markColumn);
-    }
-    else {
-        // for tree - expand/collpase double-clicked rows
-        if (gtk_tree_view_row_expanded (tree_view, path))
-            gtk_tree_view_collapse_row (tree_view, path);
         else
-            gtk_tree_view_expand_row (tree_view, path, FALSE);
+        {
+          // for tree - expand/collpase double-clicked rows
+          if ( gtk_tree_view_row_expanded ( tree_view, path ) )
+            gtk_tree_view_collapse_row ( tree_view, path );
+          else
+            gtk_tree_view_expand_row ( tree_view, path, FALSE );
 
-        pThis->emitEvent (YEvent::Activated);
+          pThis->emitEvent ( YEvent::Activated );
+        }
     }
+    else //impossible
+        pThis->toggleMark (path, pThis->markColumn);
 }
 
 void YMGA_GTreeView::toggled_cb (GtkCellRendererToggle *renderer, gchar *path_str,
@@ -404,38 +403,28 @@ void YMGA_GTreeView::right_click_cb (YGtkTreeView *view, gboolean outreach, YMGA
 
 //**** YMGA_GCBTable implementation
 
-YMGA_GCBTable::YMGA_GCBTable (YWidget *parent, YTableHeader *headers, YTableMode mode)
+YMGA_GCBTable::YMGA_GCBTable (YWidget *parent, YTableHeader *headers, YCBTableMode mode)
     : YMGA_CBTable (NULL, headers, mode),
       YMGA_GTreeView (this, parent, std::string(), false)
 {
     gtk_tree_view_set_headers_visible (getView(), TRUE);
     gtk_tree_view_set_rules_hint (getView(), columns() > 1);
     ygtk_tree_view_set_empty_text (YGTK_TREE_VIEW (getView()), _("No entries."));
-    if ( mode == YTableMultiSelection )
-        gtk_tree_selection_set_mode (getSelection(), GTK_SELECTION_MULTIPLE);
     int columnNumber = columns();
-    int columnOffset = 0;
 
     yuiMilestone() << " Slection mode " << mode <<  std::endl;
 
-    if (mode == YTableCheckBoxOnFirstColumn)
-    {
-        columnNumber += 1;
-        columnOffset = 1;
-    }
-    else if ( mode == YTableCheckBoxOnLastColumn)
-        columnNumber += 1;
     GType types [columnNumber*3];
     for (int i = 0; i < columnNumber; i++) {
         int t = i*3;
         types[t+0] = G_TYPE_BOOLEAN;
         types[t+1] = GDK_TYPE_PIXBUF;
         types[t+2] = G_TYPE_STRING;
-        if ( (i==0 && mode == YTableCheckBoxOnFirstColumn) ||
-                (i == columnNumber-1 && mode == YTableCheckBoxOnLastColumn))
-            addCheckColumn(t);
+        if ( (i==0 && mode == YCBTableCheckBoxOnFirstColumn) ||
+                (i == columnNumber-1 && mode == YCBTableCheckBoxOnLastColumn))
+            addCheckColumn(header(i), t);
         else
-            addTextColumn  (header(i-columnOffset), alignment (i-columnOffset), t+1, t+2);
+            addTextColumn  (header(i), alignment (i), t+1, t+2);
     }
     createStore (columnNumber*3, types);
     readModel();
@@ -495,7 +484,7 @@ bool YMGA_GCBTable::_immediateMode() {
     return immediateMode();
 }
 
-// YTable
+// YMGA_CBTable
 
 void YMGA_GCBTable::setKeepSorting (bool keepSorting)
 {
@@ -517,38 +506,46 @@ void YMGA_GCBTable::cellChanged (const YTableCell *cell)
 
 void YMGA_GCBTable::doAddItem (YItem *_item)
 {
-    YTableItem *item = dynamic_cast <YTableItem *> (_item);
+    YCBTableItem *item = dynamic_cast <YCBTableItem *> (_item);
     if (item) {
         GtkTreeIter iter;
         addRow (item, &iter);
         int i = 0;
-        int column_offset = 0;
-        if (selectionMode() == YTableMode::YTableCheckBoxOnFirstColumn )
+        if (tableMode() == YCBTableMode::YCBTableCheckBoxOnFirstColumn )
         {
-            column_offset=1;
-            setRowMark(&iter, i++, item->selected());
+            setRowMark(&iter, i++, item->checked());
         }
         for (YTableCellIterator it = item->cellsBegin();
                 it != item->cellsEnd(); it++)
         {
-            if ((i-column_offset) > columns())
+            if (i >= columns())
             {
-                yuiWarning() << "Item contains too many columns, current is " << i-column_offset
+                yuiWarning() << "Item contains too many columns, current is " << i
                              << " but only " << columns() << " columns are configured" << std::endl;
             }
             else
                 setCell (&iter, i++, *it);
         }
-        if (selectionMode() == YTableMode::YTableCheckBoxOnLastColumn )
+        if (tableMode() == YCBTableMode::YCBTableCheckBoxOnLastColumn )
         {
-            yuiMilestone() << " columns " << columns() << std::endl;
-            setRowMark(&iter, columns()*3, item->selected());
+          int col = columns() -1;
+          yuiMilestone() << " columns " << col << std::endl;
+          setRowMark(&iter, col*3, item->checked());
         }
         if (item->selected())
             focusItem (item, true);
     }
     else
-        yuiError() << "Can only add YTableItems to a YTable.\n";
+        yuiError() << "Can only add YCBTableItems to a YTable.\n";
+}
+
+void YMGA_GCBTable::checkItem ( YItem* item, bool checked )
+{
+  GtkTreeIter iter;
+  getTreeIter ( item, &iter );
+  blockSelected();
+
+  setRowMark ( &iter, markColumn, checked );
 }
 
 void YMGA_GCBTable::doSelectItem (YItem *item, bool select)

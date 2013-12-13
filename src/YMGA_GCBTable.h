@@ -63,6 +63,7 @@ public:
     void addTextColumn (const std::string &header, YAlignmentType align, int icon_col, int text_col);
 
     void addCheckColumn (int check_col);
+    void addCheckColumn ( const std::string& header, int check_col );
 
     void readModel();
 
@@ -121,7 +122,7 @@ protected:
 class YMGA_GCBTable : public YMGA_CBTable, public YMGA_GTreeView
 {
 public:
-    YMGA_GCBTable (YWidget *parent, YTableHeader *headers, YTableMode mode);
+    YMGA_GCBTable (YWidget *parent, YTableHeader *headers, YCBTableMode mode);
 
     void setSortable (bool sortable);
 
@@ -142,6 +143,8 @@ public:
 
     void doDeselectAllItems();
 
+    virtual void checkItem( YItem * item, bool checked = true );
+    
     // callbacks
     static void activateButton (YWidget *button);
 
