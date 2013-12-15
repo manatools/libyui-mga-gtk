@@ -540,10 +540,12 @@ void YMGA_GCBTable::doAddItem (YItem *_item)
 void YMGA_GCBTable::checkItem ( YItem* item, bool checked )
 {
   GtkTreeIter iter;
+ YCBTableItem *pItem = dynamic_cast <YCBTableItem *> (item);
+
   getTreeIter ( item, &iter );
   blockSelected();
-
   setRowMark ( &iter, markColumn, checked );
+  pItem->check(checked);
 }
 
 void YMGA_GCBTable::doSelectItem (YItem *item, bool select)
