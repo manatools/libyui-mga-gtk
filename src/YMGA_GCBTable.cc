@@ -471,8 +471,6 @@ void YMGA_GCBTable::setCell (GtkTreeIter *iter, int column, const YTableCell *ce
 {
     if (!cell) return;
     std::string label (cell->label());
-    if (label == "X")
-        label = YUI::app()->glyph (YUIGlyph_CheckMark);
 
     int index = column * 3;
     setRowText (iter, index+1, cell->iconName(), index+2, label, this);
