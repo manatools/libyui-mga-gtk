@@ -447,19 +447,23 @@ void YMGA_GCBTable::setSortable (bool sortable)
         return;
     int n = 0;
     GList *columns = gtk_tree_view_get_columns (getView());
+    int mode = tableMode();
+    int columnNumber = YMGA_GCBTable::columns();
     for (GList *i = columns; i; i = i->next, n++) {
         GtkTreeViewColumn *column = (GtkTreeViewColumn *) i->data;
-        if (n >= YMGA_GCBTable::columns())
+        if (n >= columnNumber)
             break;
         if (sortable) {
-            // anaselli it was (n*2)+1
-            int index = (n*3)+1;
-            if (!sortable)
-                index = -1;
-            gtk_tree_sortable_set_sort_func (
-                GTK_TREE_SORTABLE (getModel()), index, tree_sort_cb,
-                GINT_TO_POINTER (index), NULL);
-            gtk_tree_view_column_set_sort_column_id (column, index);
+            // offset 2 is text (G_TYPE_STRING)
+            int index = (n*3)+2;
+            if (! ( (n==0 && mode == YCBTableCheckBoxOnFirstColumn) ||
+                (n == columnNumber-1 && mode == YCBTableCheckBoxOnLastColumn)))
+            {
+                gtk_tree_sortable_set_sort_func (
+                    GTK_TREE_SORTABLE (getModel()), index, tree_sort_cb,
+                    GINT_TO_POINTER (index), NULL);
+                gtk_tree_view_column_set_sort_column_id (column, index);
+            }
         }
         else
             gtk_tree_view_column_set_sort_column_id (column, -1);
@@ -527,7 +531,6 @@ void YMGA_GCBTable::doAddItem (YItem *_item)
         if (tableMode() == YCBTableMode::YCBTableCheckBoxOnLastColumn )
         {
           int col = columns() -1;
-          yuiMilestone() << " columns " << col << std::endl;
           setRowMark(&iter, col*3, item->checked());
         }
         if (item->selected())
