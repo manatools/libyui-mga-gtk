@@ -503,7 +503,9 @@ void YMGA_GCBTable::cellChanged (const YTableCell *cell)
 {
     GtkTreeIter iter;
     getTreeIter (cell->parent(), &iter);
-    setCell (&iter, cell->column(), cell);
+    int mode = tableMode();
+    int column = (mode == YCBTableCheckBoxOnLastColumn ? cell->column() : cell->column() +1);
+    setCell (&iter, column, cell);
 }
 
 void YMGA_GCBTable::doAddItem (YItem *_item)
