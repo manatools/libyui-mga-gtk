@@ -408,7 +408,6 @@ YMGA_GCBTable::YMGA_GCBTable (YWidget *parent, YTableHeader *headers, YCBTableMo
       YMGA_GTreeView (this, parent, std::string(), false)
 {
     gtk_tree_view_set_headers_visible (getView(), TRUE);
-    gtk_tree_view_set_rules_hint (getView(), columns() > 1);
     ygtk_tree_view_set_empty_text (YGTK_TREE_VIEW (getView()), _("No entries."));
     int columnNumber = columns();
 
