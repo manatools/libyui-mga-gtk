@@ -35,7 +35,7 @@
 #include <string>
 
 #include "YMGA_GCBTable.h"
-
+#include "YMGAGMenuBar.h"
 using std::string;
 
 
@@ -52,8 +52,7 @@ YMGAGWidgetFactory::~YMGAGWidgetFactory()
 }
 
 
-YMGA_CBTable *
-YMGAGWidgetFactory::createCBTable( YWidget * parent, YTableHeader * header, YCBTableMode mode )
+YMGA_CBTable * YMGAGWidgetFactory::createCBTable( YWidget * parent, YTableHeader * header, YCBTableMode mode )
 {
     YMGA_GCBTable * table = new YMGA_GCBTable( parent, header, mode );
     YUI_CHECK_NEW( table );
@@ -61,3 +60,10 @@ YMGAGWidgetFactory::createCBTable( YWidget * parent, YTableHeader * header, YCBT
     return table;
 }
 
+YMGAMenuBar *YMGAGWidgetFactory::createMenuBar ( YWidget *parent )
+{
+  YMGAMenuBar *menubar = new YMGAGMenuBar(parent);
+  YUI_CHECK_NEW( menubar );
+
+  return menubar;
+}
