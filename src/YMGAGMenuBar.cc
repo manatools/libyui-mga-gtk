@@ -117,7 +117,7 @@ void YMGAGMenuBar::addItem(YItem* yitem)
   if (item->hasChildren())
     doCreateMenu(menu, item->childrenBegin(), item->childrenEnd());
 
-
+  YMGAMenuBar::addItem(yitem);
 }
 
 YMGAGMenuBar::~YMGAGMenuBar()
