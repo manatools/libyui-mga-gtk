@@ -51,6 +51,13 @@ public:
   **/
   virtual void addItem( YItem * item );
 
+  /**
+  * Enable YMGAMenuItem (menu name or menu entry) to enable/disable it into menubar or menu
+  *
+  * Reimplemented from YMGAMenuBar.
+  **/
+  virtual void enableItem(YItem * menu_item, bool enable=true);
+
   YGWIDGET_IMPL_COMMON (YMGAMenuBar)
 
 
