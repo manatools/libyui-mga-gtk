@@ -34,6 +34,7 @@
 #include <YSelectionWidget.h>
 #include <yui/gtk/YGSelectionStore.h>
 #include <yui/gtk/ygtktreeview.h>
+#include <yui/gtk/ygtkratiobox.h>
 #include <string.h>
 #include <yui/mga/YMGAMenuItem.h>
 #include <YTable.h>
@@ -88,9 +89,11 @@ void YMGAGMenuBar::doCreateMenu (GtkWidget *menu, YItemIterator begin, YItemIter
 
     YMGAMenuItem *menuItem = dynamic_cast<YMGAMenuItem *>(*it);
     if (menuItem)
+    {
       gtk_widget_set_sensitive(entry, menuItem->enabled() ? gtk_true() : gtk_false());
-    yuiDebug() << menuItem->label() << " " << menuItem->enabled() << std::endl;
 
+      yuiDebug() << menuItem->label() << " enabled: " << menuItem->enabled() << " hidden:" << menuItem->hidden() << std::endl;
+    }
     if ((*it)->hasChildren()) {
       GtkWidget *submenu = gtk_menu_new();
       //gtk_menu_item_set_submenu(GTK_MENU_ITEM(submenu), menu);
@@ -103,8 +106,6 @@ void YMGAGMenuBar::doCreateMenu (GtkWidget *menu, YItemIterator begin, YItemIter
     }
     else
     {
-
-
       gtk_menu_shell_append (GTK_MENU_SHELL (menu), entry);
       gtk_widget_show(entry);
 
@@ -112,6 +113,10 @@ void YMGAGMenuBar::doCreateMenu (GtkWidget *menu, YItemIterator begin, YItemIter
                         G_CALLBACK (selected_menuitem), *it);
 
     }
+    if (menuItem)
+      if (menuItem->hidden())
+        gtk_widget_hide(entry);
+
   }
 }
 
@@ -120,6 +125,7 @@ void YMGAGMenuBar::addItem(YItem* yitem)
 {
   YMenuItem * item = dynamic_cast<YMenuItem *> ( yitem );
   YUI_CHECK_PTR ( item );
+  yuiDebug() << item->label() << std::endl;
 
   // TODO icon from item
   GtkWidget *menu = gtk_menu_new();
@@ -134,10 +140,17 @@ void YMGAGMenuBar::addItem(YItem* yitem)
 
   YMGAMenuItem *menuItem = dynamic_cast<YMGAMenuItem *>(yitem);
   if (menuItem)
+  {
+    yuiDebug() << menuItem->label() << " enabled: " << menuItem->enabled() << " hidden:" << menuItem->hidden() << std::endl;
     gtk_widget_set_sensitive(menu_entry, menuItem->enabled() ? gtk_true() : gtk_false());
-
+  }
   if (item->hasChildren())
     doCreateMenu(menu, item->childrenBegin(), item->childrenEnd());
+
+  if (menuItem)
+      if (menuItem->hidden())
+        gtk_widget_hide(menu_entry);
+
 
   YMGAMenuBar::addItem(yitem);
 }
@@ -156,7 +169,31 @@ void YMGAGMenuBar::enableItem(YItem* menu_item, bool enable)
   {
     yuiError() << menu_item->label() << " not found" << std::endl;
   }
+}
 
+void YMGAGMenuBar::hideItem(YItem* menu_item, bool invisible)
+{
+  YMGAMenuBar::hideItem(menu_item, invisible);
+
+  auto search = d->menu_entry.find( menu_item );
+  if (search != d->menu_entry.end())
+  {
+    GtkWidget * menu_entry = search->second;
+    gtk_widget_set_visible(menu_entry, invisible ? gtk_false() : gtk_true());
+//     if (!invisible)
+//     {
+//       int min_width = this->getMinSize (YD_HORIZ);
+//       int min_height = this->getMinSize (YD_VERT);
+//       ygtk_adj_size_set_min(YGTK_ADJ_SIZE(getLayout()), min_width + menu_item->label().size(), min_height);
+//
+//       gtk_widget_queue_resize(getWidget());
+//     }
+
+  }
+  else
+  {
+    yuiError() << menu_item->label() << " not found" << std::endl;
+  }
 }
 
 
