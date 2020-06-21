@@ -51,12 +51,16 @@
 typedef std::map<YItem*, GtkWidget*> MenuEntryMap;
 typedef std::pair<YItem*, GtkWidget*> MenuEntryPair;
 
+typedef std::map<YItem*, gulong> MenuCBMap;
+typedef std::pair<YItem*, gulong> MenuCBPair;
+
+
 struct YMGAGMenuBar::Private
 {
   GtkWidget *menubar;
-  GSimpleActionGroup *action_group;
 
   MenuEntryMap menu_entry;
+  MenuCBMap menu_cb;
 };
 
 YMGAGMenuBar::YMGAGMenuBar(YWidget* parent)
@@ -67,7 +71,6 @@ YMGAGMenuBar::YMGAGMenuBar(YWidget* parent)
 {
   YUI_CHECK_NEW ( d );
   d->menubar = getWidget();
-  d->action_group = g_simple_action_group_new();
 
 
   //gtk_misc_set_alignment (GTK_MISC (getWidget()), 0.0, 0.5);
@@ -96,6 +99,7 @@ void YMGAGMenuBar::doCreateMenu (GtkWidget *menu, YItemIterator begin, YItemIter
     }
     if ((*it)->hasChildren()) {
       GtkWidget *submenu = gtk_menu_new();
+
       //gtk_menu_item_set_submenu(GTK_MENU_ITEM(submenu), menu);
       gtk_menu_item_set_submenu(GTK_MENU_ITEM(entry), submenu);
       gtk_menu_shell_append (GTK_MENU_SHELL (menu), entry);
@@ -109,9 +113,10 @@ void YMGAGMenuBar::doCreateMenu (GtkWidget *menu, YItemIterator begin, YItemIter
       gtk_menu_shell_append (GTK_MENU_SHELL (menu), entry);
       gtk_widget_show(entry);
 
-      g_signal_connect (G_OBJECT (entry), "activate",
+      gulong id = g_signal_connect (G_OBJECT (entry), "activate",
                         G_CALLBACK (selected_menuitem), *it);
 
+      d->menu_cb.insert(MenuCBPair(*it, id));
     }
     if (menuItem)
       if (menuItem->hidden())
@@ -196,9 +201,33 @@ void YMGAGMenuBar::hideItem(YItem* menu_item, bool invisible)
   }
 }
 
+void YMGAGMenuBar::deleteAllItems()
+{
+
+  for (MenuCBMap::iterator it=d->menu_cb.begin(); it!=d->menu_cb.end(); ++it)
+  {
+    auto search = d->menu_entry.find( it->first );
+    if (search != d->menu_entry.end())
+      g_signal_handler_disconnect (search->second, it->second);
+  }
+
+  for (MenuEntryMap::iterator it=d->menu_entry.begin(); it!=d->menu_entry.end(); ++it)
+  {
+    gtk_widget_destroy(it->second);
+  }
+
+  d->menu_cb.clear();
+  d->menu_entry.clear();
+
+  YSelectionWidget::deleteAllItems();
+}
+
 
 YMGAGMenuBar::~YMGAGMenuBar()
 {
+  d->menu_cb.clear();
+  d->menu_entry.clear();
+
   delete d;
 }
 
