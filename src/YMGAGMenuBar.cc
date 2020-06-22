@@ -61,6 +61,8 @@ struct YMGAGMenuBar::Private
 
   MenuEntryMap menu_entry;
   MenuCBMap menu_cb;
+
+  std::vector<GtkWidget*> menu_widgets;
 };
 
 YMGAGMenuBar::YMGAGMenuBar(YWidget* parent)
@@ -135,8 +137,11 @@ void YMGAGMenuBar::addItem(YItem* yitem)
   // TODO icon from item
   GtkWidget *menu = gtk_menu_new();
 
+
   std::string lbl = YGUtils::mapKBAccel (item->label());
   GtkWidget *menu_entry = gtk_menu_item_new_with_mnemonic(lbl.c_str());
+
+  d->menu_widgets.push_back(menu_entry);
 
   d->menu_entry.insert(MenuEntryPair(yitem, menu_entry));
   gtk_menu_item_set_submenu(GTK_MENU_ITEM(menu_entry), menu);
@@ -211,11 +216,18 @@ void YMGAGMenuBar::deleteAllItems()
       g_signal_handler_disconnect (search->second, it->second);
   }
 
-  for (MenuEntryMap::iterator it=d->menu_entry.begin(); it!=d->menu_entry.end(); ++it)
+
+  for (GtkWidget *m: d->menu_widgets)
   {
-    gtk_widget_destroy(it->second);
+    gtk_widget_destroy(m);
   }
 
+//   for (MenuEntryMap::iterator it=d->menu_entry.begin(); it!=d->menu_entry.end(); ++it)
+//   {
+//     gtk_widget_destroy(it->second);
+//   }
+
+  d->menu_widgets.clear();
   d->menu_cb.clear();
   d->menu_entry.clear();
 
