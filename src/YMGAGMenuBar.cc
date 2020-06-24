@@ -87,43 +87,53 @@ void YMGAGMenuBar::doCreateMenu (GtkWidget *menu, YItemIterator begin, YItemIter
 {
   for (YItemIterator it = begin; it != end; it++)
   {
-    GtkWidget *entry;
-    std::string action_name = YGUtils::mapKBAccel ((*it)->label());
-    entry = gtk_menu_item_new_with_mnemonic (action_name.c_str());
-    d->menu_entry.insert(MenuEntryPair(*it, entry));
-
-    YMGAMenuItem *menuItem = dynamic_cast<YMGAMenuItem *>(*it);
-    if (menuItem)
+    YMenuSeparator *separator = dynamic_cast<YMenuSeparator *>(*it);
+    if (separator)
     {
-      gtk_widget_set_sensitive(entry, menuItem->enabled() ? gtk_true() : gtk_false());
-
-      yuiDebug() << menuItem->label() << " enabled: " << menuItem->enabled() << " hidden:" << menuItem->hidden() << std::endl;
-    }
-    if ((*it)->hasChildren()) {
-      GtkWidget *submenu = gtk_menu_new();
-
-      //gtk_menu_item_set_submenu(GTK_MENU_ITEM(submenu), menu);
-      gtk_menu_item_set_submenu(GTK_MENU_ITEM(entry), submenu);
-      gtk_menu_shell_append (GTK_MENU_SHELL (menu), entry);
-      gtk_widget_show(entry);
-
-      doCreateMenu (submenu, (*it)->childrenBegin(), (*it)->childrenEnd());
-
+      GtkWidget *sep = gtk_separator_menu_item_new();
+      gtk_menu_shell_append(GTK_MENU_SHELL(menu), sep);
+      gtk_widget_show(sep);
     }
     else
     {
-      gtk_menu_shell_append (GTK_MENU_SHELL (menu), entry);
-      gtk_widget_show(entry);
+      GtkWidget *entry;
+      std::string action_name = YGUtils::mapKBAccel ((*it)->label());
+      entry = gtk_menu_item_new_with_mnemonic (action_name.c_str());
+      d->menu_entry.insert(MenuEntryPair(*it, entry));
 
-      gulong id = g_signal_connect (G_OBJECT (entry), "activate",
-                        G_CALLBACK (selected_menuitem), *it);
 
-      d->menu_cb.insert(MenuCBPair(*it, id));
+      YMGAMenuItem *menuItem = dynamic_cast<YMGAMenuItem *>(*it);
+      if (menuItem)
+      {
+        gtk_widget_set_sensitive(entry, menuItem->enabled() ? gtk_true() : gtk_false());
+
+        yuiDebug() << menuItem->label() << " enabled: " << menuItem->enabled() << " hidden:" << menuItem->hidden() << std::endl;
+      }
+      if ((*it)->hasChildren()) {
+        GtkWidget *submenu = gtk_menu_new();
+
+        //gtk_menu_item_set_submenu(GTK_MENU_ITEM(submenu), menu);
+        gtk_menu_item_set_submenu(GTK_MENU_ITEM(entry), submenu);
+        gtk_menu_shell_append (GTK_MENU_SHELL (menu), entry);
+        gtk_widget_show(entry);
+
+        doCreateMenu (submenu, (*it)->childrenBegin(), (*it)->childrenEnd());
+
+      }
+      else
+      {
+        gtk_menu_shell_append (GTK_MENU_SHELL (menu), entry);
+        gtk_widget_show(entry);
+
+        gulong id = g_signal_connect (G_OBJECT (entry), "activate",
+                          G_CALLBACK (selected_menuitem), *it);
+
+        d->menu_cb.insert(MenuCBPair(*it, id));
+      }
+      if (menuItem)
+        if (menuItem->hidden())
+          gtk_widget_hide(entry);
     }
-    if (menuItem)
-      if (menuItem->hidden())
-        gtk_widget_hide(entry);
-
   }
 }
 
