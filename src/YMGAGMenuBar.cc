@@ -44,6 +44,7 @@
 #include <gtk/gtkmenubar.h>
 #include <gtk/gtk.h>
 #include "YMGAGMenuBar.h"
+#include <boost/filesystem.hpp>
 
 #define YGTK_VBOX_NEW(arg) gtk_box_new(GTK_ORIENTATION_VERTICAL,arg)
 #define YGTK_HBOX_NEW(arg) gtk_box_new(GTK_ORIENTATION_HORIZONTAL,arg)
@@ -97,8 +98,37 @@ void YMGAGMenuBar::doCreateMenu (GtkWidget *menu, YItemIterator begin, YItemIter
     else
     {
       GtkWidget *entry;
-      std::string action_name = YGUtils::mapKBAccel ((*it)->label());
-      entry = gtk_menu_item_new_with_mnemonic (action_name.c_str());
+      YItem * yitem = *it;
+      std::string action_name = YGUtils::mapKBAccel (yitem->label());
+      if (yitem->hasIconName())
+      {
+        GtkIconTheme * theme = gtk_icon_theme_get_default();
+        std::string ico = boost::filesystem::path(yitem->iconName()).stem().c_str();
+        GtkWidget *icon;
+        GtkWidget *box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+        if (gtk_icon_theme_has_icon (theme, ico.c_str()))
+        {
+          icon = gtk_image_new_from_icon_name (ico.c_str(), GTK_ICON_SIZE_MENU);
+        }
+        else
+        {
+          icon = gtk_image_new_from_file(yitem->iconName().c_str());
+        }
+        GtkWidget *label = gtk_label_new (action_name.c_str());
+        entry = gtk_menu_item_new ();
+
+        gtk_container_add (GTK_CONTAINER (box), icon);
+        gtk_container_add (GTK_CONTAINER (box), label);
+
+        gtk_label_set_use_underline (GTK_LABEL (label), TRUE);
+        gtk_label_set_xalign (GTK_LABEL (label), 0.0);
+
+        gtk_container_add (GTK_CONTAINER (entry), box);
+      }
+      else
+      {
+        entry = gtk_menu_item_new_with_mnemonic (action_name.c_str());
+      }
       d->menu_entry.insert(MenuEntryPair(*it, entry));
 
 
@@ -112,10 +142,9 @@ void YMGAGMenuBar::doCreateMenu (GtkWidget *menu, YItemIterator begin, YItemIter
       if ((*it)->hasChildren()) {
         GtkWidget *submenu = gtk_menu_new();
 
-        //gtk_menu_item_set_submenu(GTK_MENU_ITEM(submenu), menu);
         gtk_menu_item_set_submenu(GTK_MENU_ITEM(entry), submenu);
         gtk_menu_shell_append (GTK_MENU_SHELL (menu), entry);
-        gtk_widget_show(entry);
+        gtk_widget_show_all(entry);
 
         doCreateMenu (submenu, (*it)->childrenBegin(), (*it)->childrenEnd());
 
@@ -123,7 +152,7 @@ void YMGAGMenuBar::doCreateMenu (GtkWidget *menu, YItemIterator begin, YItemIter
       else
       {
         gtk_menu_shell_append (GTK_MENU_SHELL (menu), entry);
-        gtk_widget_show(entry);
+        gtk_widget_show_all (entry);
 
         gulong id = g_signal_connect (G_OBJECT (entry), "activate",
                           G_CALLBACK (selected_menuitem), *it);
