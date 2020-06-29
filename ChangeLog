@@ -1,5 +1,6 @@
-
-- Added menubar
+Mon Jun 29 19:19:01 CEST 2020 - anaselli@linux.it
+- Added menubar and new menu items implementation
+- 1.1.0
 
 Tue Apr 14 12:12:36 CEST 2020 - anaselli@linux.it
 - removed deprecated function
