@@ -27,7 +27,7 @@
 #include <yui/YUILog.h>
 
 #include "YMGAGWidgetFactory.h"
-#include <yui/gtk/YGUI.h>
+// #include <yui/gtk/YGUI.h>
 #include <yui/YUIException.h>
 #include <YExternalWidgets.h>
 
@@ -52,9 +52,11 @@ YMGAGWidgetFactory::~YMGAGWidgetFactory()
 }
 
 
-YMGA_CBTable * YMGAGWidgetFactory::createCBTable( YWidget * parent, YTableHeader * header, YCBTableMode mode )
+YMGA_CBTable * YMGAGWidgetFactory::createCBTable( YWidget * parent, YTableHeader * header)
 {
-    YMGA_GCBTable * table = new YMGA_GCBTable( parent, header, mode );
+    YCBTableHeader *hdr = dynamic_cast<YCBTableHeader *>(header);
+    YUI_CHECK_NEW(hdr);
+    YMGA_GCBTable * table = new YMGA_GCBTable( parent, hdr );
     YUI_CHECK_NEW( table );
 
     return table;

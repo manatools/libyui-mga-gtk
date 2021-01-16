@@ -25,9 +25,8 @@
 
 #include <yui/gtk/YGi18n.h>
 
-#define YUILogComponent "mga-gtk-ui"
 
-#include <yui/YUILog.h>
+
 #include <yui/gtk/YGUI.h>
 #include <yui/gtk/YGUtils.h>
 #include <yui/gtk/YGWidget.h>
@@ -40,6 +39,12 @@
 
 #include <yui/gtk/YGDialog.h>
 #include <gdk/gdkkeysyms.h>
+
+#ifdef YUILogComponent
+#undef YUILogComponent
+#endif
+#define YUILogComponent "mga-gtk-ui"
+#include <yui/YUILog.h>
 
 #include "YMGA_GCBTable.h"
 
@@ -269,15 +274,19 @@ void YMGA_GTreeView::toggleMark (GtkTreePath *path, gint column)
         YMGA_CBTable * pTable = dynamic_cast<YMGA_CBTable*>(this);
         if (pTable)
         {
-            if ( (pTable->tableMode() == YCBTableMode::YCBTableCheckBoxOnFirstColumn &&  column == 0)
-                    ||
-                    (pTable->tableMode() == YCBTableMode::YCBTableCheckBoxOnLastColumn  &&  column == (pTable->columns()-1)*3 ))
-            {
-                setRowMark (&iter, column, state);
-                pYCBTableItem->check(state);
-                pTable->setChangedItem(pYCBTableItem);
-                emitEvent (YEvent::ValueChanged);
-            }
+          int col = column / 3;
+          if (pTable->isCheckBoxColumn(col))
+          {
+            setRowMark (&iter, column, state);
+            // checkboxItemColumn is true so hasCell is as well and column exists
+            YCBTableCell *cell = dynamic_cast<YCBTableCell *>(pYCBTableItem->cell(col));
+            YUI_CHECK_PTR( cell );
+            cell->setChecked( state == TRUE );
+            pYCBTableItem->setChangedColumn(col);
+            pTable->setChangedItem ( pYCBTableItem );
+
+            emitEvent (YEvent::ValueChanged);
+          }
         }
     }
     else
@@ -403,15 +412,13 @@ void YMGA_GTreeView::right_click_cb (YGtkTreeView *view, gboolean outreach, YMGA
 
 //**** YMGA_GCBTable implementation
 
-YMGA_GCBTable::YMGA_GCBTable (YWidget *parent, YTableHeader *headers, YCBTableMode mode)
-    : YMGA_CBTable (NULL, headers, mode),
+YMGA_GCBTable::YMGA_GCBTable (YWidget *parent, YCBTableHeader *headers)
+    : YMGA_CBTable (NULL, headers),
       YMGA_GTreeView (this, parent, std::string(), false)
 {
     gtk_tree_view_set_headers_visible (getView(), TRUE);
     ygtk_tree_view_set_empty_text (YGTK_TREE_VIEW (getView()), _("No entries."));
     int columnNumber = columns();
-
-    yuiMilestone() << " Slection mode " << mode <<  std::endl;
 
     GType types [columnNumber*3];
     for (int i = 0; i < columnNumber; i++) {
@@ -419,8 +426,7 @@ YMGA_GCBTable::YMGA_GCBTable (YWidget *parent, YTableHeader *headers, YCBTableMo
         types[t+0] = G_TYPE_BOOLEAN;
         types[t+1] = GDK_TYPE_PIXBUF;
         types[t+2] = G_TYPE_STRING;
-        if ( (i==0 && mode == YCBTableCheckBoxOnFirstColumn) ||
-                (i == columnNumber-1 && mode == YCBTableCheckBoxOnLastColumn))
+        if ( isCheckBoxColumn(i) )
             addCheckColumn(header(i), t);
         else
             addTextColumn  (header(i), alignment (i), t+1, t+2);
@@ -446,7 +452,6 @@ void YMGA_GCBTable::setSortable (bool sortable)
         return;
     int n = 0;
     GList *columns = gtk_tree_view_get_columns (getView());
-    int mode = tableMode();
     int columnNumber = YMGA_GCBTable::columns();
     for (GList *i = columns; i; i = i->next, n++) {
         GtkTreeViewColumn *column = (GtkTreeViewColumn *) i->data;
@@ -455,8 +460,7 @@ void YMGA_GCBTable::setSortable (bool sortable)
         if (sortable) {
             // offset 2 is text (G_TYPE_STRING)
             int index = (n*3)+2;
-            if (! ( (n==0 && mode == YCBTableCheckBoxOnFirstColumn) ||
-                (n == columnNumber-1 && mode == YCBTableCheckBoxOnLastColumn)))
+            if ( !isCheckBoxColumn(n) )
             {
                 gtk_tree_sortable_set_sort_func (
                     GTK_TREE_SORTABLE (getModel()), index, tree_sort_cb,
@@ -502,8 +506,7 @@ void YMGA_GCBTable::cellChanged (const YTableCell *cell)
 {
     GtkTreeIter iter;
     getTreeIter (cell->parent(), &iter);
-    int mode = tableMode();
-    int column = (mode == YCBTableCheckBoxOnLastColumn ? cell->column() : cell->column() +1);
+    int column = cell->column();
     setCell (&iter, column, cell);
 }
 
@@ -513,27 +516,19 @@ void YMGA_GCBTable::doAddItem (YItem *_item)
     if (item) {
         GtkTreeIter iter;
         addRow (item, &iter);
-        int i = 0;
-        if (tableMode() == YCBTableMode::YCBTableCheckBoxOnFirstColumn )
-        {
-            setRowMark(&iter, i++, item->checked());
-        }
+
         for (YTableCellIterator it = item->cellsBegin();
                 it != item->cellsEnd(); it++)
         {
-            if (i >= columns())
-            {
-                yuiWarning() << "Item contains too many columns, current is " << i
-                             << " but only " << columns() << " columns are configured" << std::endl;
-            }
-            else
-                setCell (&iter, i++, *it);
+          YCBTableCell *cbCell = dynamic_cast<YCBTableCell *>(*it);
+          if ( cbCell && isCheckBoxColumn( cbCell->column() ) )
+          {
+              setRowMark(&iter, cbCell->column()*3, cbCell->checked());
+          }
+          else
+            setCell (&iter, (*it)->column(), *it);
         }
-        if (tableMode() == YCBTableMode::YCBTableCheckBoxOnLastColumn )
-        {
-          int col = columns() -1;
-          setRowMark(&iter, col*3, item->checked());
-        }
+
         if (item->selected())
             focusItem (item, true);
     }
@@ -541,7 +536,7 @@ void YMGA_GCBTable::doAddItem (YItem *_item)
         yuiError() << "Can only add YCBTableItems to a YTable.\n";
 }
 
-void YMGA_GCBTable::checkItem ( YItem* item, bool checked )
+void YMGA_GCBTable::setItemChecked ( YItem* item, int column, bool checked )
 {
   GtkTreeIter iter;
  YCBTableItem *pItem = dynamic_cast <YCBTableItem *> (item);
@@ -549,7 +544,10 @@ void YMGA_GCBTable::checkItem ( YItem* item, bool checked )
   getTreeIter ( item, &iter );
   blockSelected();
   setRowMark ( &iter, markColumn, checked );
-  pItem->check(checked);
+
+  YCBTableCell *cell = dynamic_cast<YCBTableCell *>(pItem->cell(column));
+  YUI_CHECK_PTR( cell );
+  cell->setChecked( checked );
 }
 
 void YMGA_GCBTable::doSelectItem (YItem *item, bool select)

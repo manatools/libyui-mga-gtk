@@ -27,9 +27,10 @@
 #define YMGAGWidgetFactory_h
 
 
+#include <yui/mga/YMGA_CBTable.h>
 #include <yui/mga/YMGAWidgetExtensionFactory.h>
 
-#include "YMGA_CBTable.h"
+// #include "YMGA_CBTable.h"
 
 
 using std::string;
@@ -42,7 +43,7 @@ class YMGAGWidgetFactory: public YMGAWidgetFactory
 {
 public:
 
-  virtual YMGA_CBTable * createCBTable ( YWidget * parent, YTableHeader * header_disown, YCBTableMode mode = YCBTableCheckBoxOnFirstColumn );
+  virtual YMGA_CBTable * createCBTable ( YWidget * parent, YTableHeader * header_disown );
   virtual YMGAMenuBar  * createMenuBar ( YWidget *parent );
 
 protected:

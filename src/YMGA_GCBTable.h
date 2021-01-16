@@ -122,7 +122,7 @@ protected:
 class YMGA_GCBTable : public YMGA_CBTable, public YMGA_GTreeView
 {
 public:
-    YMGA_GCBTable (YWidget *parent, YTableHeader *headers, YCBTableMode mode);
+    YMGA_GCBTable (YWidget *parent, YCBTableHeader *headers );
 
     void setSortable (bool sortable);
 
@@ -143,7 +143,7 @@ public:
 
     void doDeselectAllItems();
 
-    virtual void checkItem( YItem * item, bool checked = true );
+    virtual void setItemChecked( YItem * item, int column, bool checked = true );
     
     // callbacks
     static void activateButton (YWidget *button);
