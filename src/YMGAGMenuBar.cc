@@ -22,13 +22,13 @@
   Author:       Angelo Naselli <anaselli@linux.it>
 
 /-*/
+#define YUILogComponent "mga-gtk-ui"
+#include <yui/YUILog.h>
 
 #include <yui/gtk/YGi18n.h>
 
-#define YUILogComponent "mga-gtk-ui"
 
-#include <yui/YUILog.h>
-#include <yui/gtk/YGUI.h>
+// #include <yui/gtk/YGUI.h>
 #include <yui/gtk/YGUtils.h>
 #include <yui/gtk/YGWidget.h>
 #include <YSelectionWidget.h>
