@@ -20,6 +20,7 @@ find_package(Boost COMPONENTS system filesystem REQUIRED)
 SET( SONAME_MAJOR ${YUI_SO_MAJOR} )
 SET( SONAME ${YUI_SO_VERSION} )
 
+PKG_CHECK_MODULES(YUIGTK REQUIRED libyui-gtk)
 PKG_CHECK_MODULES(YUIMGA REQUIRED libyui-mga)
 
 #
@@ -87,6 +88,7 @@ target_compile_definitions( ${TARGETLIB} PUBLIC VERSION="${VERSION}" )
 # before add_library in the case.
 target_link_directories( ${TARGETLIB}
   PUBLIC ${YUI_LIBRARY_DIRS}
+  PUBLIC ${YUIGTK_LIBRARY_DIRS}
   PUBLIC ${YUIMGA_LIBRARY_DIRS}
   PUBLIC ${GTK3_LIBRARY_DIRS}
 )
@@ -97,6 +99,7 @@ target_link_directories( ${TARGETLIB}
 # If in doubt what is really needed, check with "ldd -u" which libs are unused.
 target_link_libraries( ${TARGETLIB}
   ${YUI_LIBRARIES}
+  ${YUIGTK_LIBRARIES}
   ${YUIMGA_LIBRARIES}
   ${GTK3_LIBRARIES}
   ${Boost_FILESYSTEM_LIBRARY}
